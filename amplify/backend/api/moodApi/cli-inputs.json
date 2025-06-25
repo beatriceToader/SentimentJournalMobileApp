@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paths": {
+    "/analyzeMood": {
+      "name": "/analyzeMood",
+      "lambdaFunction": "analyzeMood",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

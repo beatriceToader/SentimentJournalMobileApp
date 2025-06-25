@@ -1,4 +1,20 @@
 {
+  "api": {
+    "moodApi": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "analyzeMood"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    }
+  },
   "auth": {
     "sentimentjournaljs2a72562d": {
       "customAuth": false,
@@ -23,6 +39,32 @@
       },
       "providerPlugin": "awscloudformation",
       "service": "Cognito"
+    }
+  },
+  "function": {
+    "analyzeMood": {
+      "build": true,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_analyzeMood_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "analyzeMood"
+        }
+      ]
+    },
+    "AMPLIFY_function_analyzeMood_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "analyzeMood"
+        }
+      ]
     }
   }
 }

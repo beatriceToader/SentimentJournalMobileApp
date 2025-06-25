@@ -4,11 +4,8 @@ import Logo from '../../../assets/images/mood-journal-logo.png'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
-//import { Auth } from 'aws-amplify'
 import { useForm, Controller } from 'react-hook-form'
 import { signIn } from 'aws-amplify/auth';
-//import { Hub } from 'aws-amplify/utils';
-
 
 const SignInScreen = () => {
 

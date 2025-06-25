@@ -14,6 +14,15 @@
     "categories": {
       "auth": {
         "sentimentjournaljs2a72562d": {}
+      },
+      "function": {
+        "analyzeMood": {
+          "deploymentBucketName": "amplify-sentimentjournaljs-dev-6d8e1-deployment",
+          "s3Key": "amplify-builds/analyzeMood-3671396c69746b786551-build.zip"
+        }
+      },
+      "api": {
+        "moodApi": {}
       }
     }
   }
