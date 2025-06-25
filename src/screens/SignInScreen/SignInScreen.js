@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native'
 //import { Auth } from 'aws-amplify'
 import { useForm, Controller } from 'react-hook-form'
 import { signIn } from 'aws-amplify/auth';
+//import { Hub } from 'aws-amplify/utils';
+
 
 const SignInScreen = () => {
 
@@ -28,8 +30,7 @@ const SignInScreen = () => {
                 password: data.password,
             });
             console.log('Signed in successfully:', isSignedIn, nextStep);
-            //setLoading(false)
-            navigation.navigate('Home');
+            //Hub.dispatch('auth', { event: 'signIn' });
         } catch (error) {
             console.log('Sign-in error:', error);
 

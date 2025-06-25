@@ -12,17 +12,17 @@ Amplify.configure(amplifyconfig);
 
 const App = () => {
 
-  useEffect(() => {
-    const resetSession = async () => {
-      try {
-        await signOut();
-        console.log('User signed out on app start');
-      } catch (e) {
-        console.log('Error signing out on init', e);
-      }
-    };
-    resetSession();
-  }, []);
+  // useEffect(() => {
+  //   const resetSession = async () => {
+  //     try {
+  //       await signOut();
+  //       console.log('User signed out on app start');
+  //     } catch (e) {
+  //       console.log('Error signing out on init', e);
+  //     }
+  //   };
+  //   resetSession();
+  // }, []);
 
   return (
     <View style={styles.container}>
