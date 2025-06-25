@@ -3,18 +3,43 @@ import {View, Text, StyleSheet, Dimensions, ScrollView} from 'react-native'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
+import { useForm, Controller } from 'react-hook-form'
+import { signUp } from 'aws-amplify/auth';
+import { Alert } from 'react-native';
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const SignUpScreen = () => {
-
-    const [username, setUsername] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [passwordRepeat, setPasswordRepeat] = useState('')
+    const {control, handleSubmit, watch} = useForm()
+    const pwd = watch('password')
+    const [loading, setLoading] = useState(false)
 
     const navigation = useNavigation();
 
-    const onRegisterPressed = () => {
-        navigation.navigate('ConfirmEmail')
+    const onRegisterPressed = async (data) => {
+        if(loading){
+            return;
+        }
+
+        setLoading(true)
+
+        try{
+            const {username, password, email}=data;
+            const response = await signUp({
+                username,
+                password,
+                options: {
+                    userAttributes:{
+                        email
+                    }
+                }
+            })
+            navigation.navigate('ConfirmEmail',{username})
+        }catch(e){
+            console.error('Sign up error', e);
+            Alert.alert('Ooops', e.message)
+        }
+        setLoading(false)
     }
 
     const onTermsOfUsePressed = () => {
@@ -33,33 +58,57 @@ const SignUpScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.root}>
             <Text style={styles.title}>Create Account</Text>
-            <CustomInput 
+            <CustomInput
+                name='username' 
                 placeholder="Username" 
-                value={username} 
-                setValue={setUsername} 
+                control={control}
+                rules= {{
+                    required:'Username is required',
+                    minLength: {
+                        value:3,
+                        message:'Username should have at least 3 characters'
+                    },
+                    maxLength: {
+                        value:24,
+                        message:'Username should have less than 24 characters'
+                    },
+                }} 
                 secureTextEntry={false}
             />
             <CustomInput 
+                name='email'
                 placeholder="Email" 
-                value={email}
-                setValue={setEmail} 
+                control={control}
+                rules= {{required:'Email is required', pattern: {value: EMAIL_REGEX, message:'Email is invalid'}}} 
                 secureTextEntry={false}
             />
-            <CustomInput 
+            <CustomInput
+                name='password' 
                 placeholder="Password" 
-                value={password} 
-                setValue={setPassword} 
+                control={control}
+                rules= {{
+                    required:'Password is required',
+                    minLength: {
+                        value:8,
+                        message:'Password should have at least 3 characters'
+                    },
+                }}  
                 secureTextEntry={true}
             />
             <CustomInput 
+                name='repeatPassword'
                 placeholder="Repeat Password" 
-                value={passwordRepeat} 
-                setValue={setPasswordRepeat} 
+                control={control}
+                rules= {{
+                    required:'Repeat Password is required',
+                    validate: value => 
+                        value === pwd || 'Passwords do not match'
+                }} 
                 secureTextEntry={true}
             />
             <CustomButton 
-                text="Register" 
-                onPress={onRegisterPressed}
+                text={loading ? "Loading...":"Register"} 
+                onPress={handleSubmit(onRegisterPressed)}
             />
 
             <Text style={styles.text}>By registering, you confirm that you accept our{' '}<Text style={styles.link} onPress={onTermsOfUsePressed}>Terms of Use</Text> and{' '}  

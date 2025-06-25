@@ -1,21 +1,53 @@
 import React, {useState} from 'react'
-import {View, Text, Image, StyleSheet, Dimensions, ScrollView} from 'react-native'
+import {View, TextInput, Image, StyleSheet, Dimensions, ScrollView} from 'react-native'
 import Logo from '../../../assets/images/mood-journal-logo.png'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
+//import { Auth } from 'aws-amplify'
+import { useForm, Controller } from 'react-hook-form'
+import { signIn } from 'aws-amplify/auth';
 
 const SignInScreen = () => {
 
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
-
     const navigation = useNavigation();
+    const [loading, setLoading] = useState(false)
 
-    const onSignInPressed = () => {
-        //validate User
-        navigation.navigate('Home')
-    }
+    const {control, handleSubmit, formState: {errors}} = useForm()
+
+    const onSignInPressed = async (data) => {
+        if(loading){
+            return;
+        }
+
+        setLoading(true)
+
+        try {
+            const { isSignedIn, nextStep } = await signIn({
+                username: data.username,
+                password: data.password,
+            });
+            console.log('Signed in successfully:', isSignedIn, nextStep);
+            //setLoading(false)
+            navigation.navigate('Home');
+        } catch (error) {
+            console.log('Sign-in error:', error);
+
+            let errorMessage = 'An unknown error occurred';
+            if (error.name === 'UserNotFoundException') {
+                errorMessage = 'User does not exist';
+            } else if (error.name === 'NotAuthorizedException') {
+                errorMessage = 'Incorrect username or password';
+            } else if (error.name === 'UserNotConfirmedException') {
+                errorMessage = 'User is not confirmed';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            Alert.alert('Sign-in failed', errorMessage);
+        }
+        setLoading(false)
+    };
 
     const onForgotPasswordPressed = () => {
         navigation.navigate('ForgotPassword')
@@ -34,20 +66,22 @@ const SignInScreen = () => {
                 resizeMode='contained'
             />
             <CustomInput 
+                name='username'
                 placeholder="Username" 
-                value={username} 
-                setValue={setUsername} 
+                control={control}
+                rules= {{required:'Username is required'}}
                 secureTextEntry={false}
             />
             <CustomInput 
+                name='password'
                 placeholder="Password" 
-                value={password} 
-                setValue={setPassword} 
+                control={control}
+                rules= {{required:'Password is required', minLength: {value:8, message:'Password must have at least 8 characters'}}}
                 secureTextEntry={true}
             />
             <CustomButton 
-                text="Sign In" 
-                onPress={onSignInPressed}
+                text={loading ? "Loading..." : "Sign In"} 
+                onPress={handleSubmit(onSignInPressed)}
             />
             <CustomButton 
                 text="Forgot password?" 
@@ -64,29 +98,26 @@ const SignInScreen = () => {
     )
 }
 
+// Your styles remain the same...
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
 const styles = StyleSheet.create({
     scrollContainer: {
-        flexGrow: 1,          // face ca ScrollView să se extindă complet
-        justifyContent: 'center',  // sau 'flex-start'
-        paddingVertical: 40,  // spațiu sus/jos
-        //paddingHorizontal: 20,
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingVertical: 40,
         minWidth: Dimensions.get('window').width,
         minHeight: Dimensions.get('window').height,
         backgroundColor: '#fbdbab'
     },
     root:{
-        //flex: 1, // Ocupă tot ecranul
         alignItems: 'center',
         width: '100%',
         height: '100%',
-        justifyContent: 'flex-start', // aliniezi sus
-        paddingTop: 50, // distanță față de topul ecranului
+        justifyContent: 'flex-start',
+        paddingTop: 50,
         paddingHorizontal: 20,
-        //alignSelf: 'stretch', 
-        //backgroundColor: 'white'
     },
     logo:{
         width: windowWidth * 0.7,

@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-sentimentjournaljs-dev-6d8e1-authRole",
+      "UnauthRoleArn": "arn:aws:iam::783453147928:role/amplify-sentimentjournaljs-dev-6d8e1-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::783453147928:role/amplify-sentimentjournaljs-dev-6d8e1-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-sentimentjournaljs-dev-6d8e1-deployment",
+      "UnauthRoleName": "amplify-sentimentjournaljs-dev-6d8e1-unauthRole",
+      "StackName": "amplify-sentimentjournaljs-dev-6d8e1",
+      "StackId": "arn:aws:cloudformation:us-east-1:783453147928:stack/amplify-sentimentjournaljs-dev-6d8e1/1a765c60-510b-11f0-b5ec-0affe25c9dd5",
+      "AmplifyAppId": "d2msu1gqi3u497"
+    },
+    "categories": {
+      "auth": {
+        "sentimentjournaljs2a72562d": {}
+      }
+    }
+  }
+}

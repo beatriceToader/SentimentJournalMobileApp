@@ -1,16 +1,45 @@
 import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView} from 'react-native'
+import {View, Text, StyleSheet, Dimensions, ScrollView, Alert} from 'react-native'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
+import { useForm, Controller } from 'react-hook-form'
+import { resetPassword } from 'aws-amplify/auth';
 
 const ForgotPasswordScreen = () => {
-    const [username, setUsername] = useState('')
+    const {control, handleSubmit} = useForm()
+    const [loading, setLoading] = useState(false)
 
     const navigation = useNavigation();   
 
-    const onSendPressed = () => {
-        navigation.navigate('NewPassword')
+    const onSendPressed = async(data) => {
+        if(loading){
+            return;
+        }
+
+        setLoading(true)
+
+        try {
+            const response = await resetPassword({ username: data.username });
+
+            console.log('Reset password response:', response);
+            Alert.alert('Success', 'Confirmation code sent to your email');
+            navigation.navigate('NewPassword', { username: data.username });
+        } catch (e) {
+            console.log('Forgot password error', e);
+
+            let message = 'Something went wrong';
+            if (e.name === 'UserNotFoundException') {
+                message = 'User not found';
+            } else if (e.name === 'InvalidParameterException') {
+                message = 'Invalid username';
+            } else if (e.message) {
+                message = e.message;
+            }
+
+            Alert.alert('Ooops', message);
+        }
+        setLoading(false)
     }
 
     const onSignInPressed = () => {
@@ -22,15 +51,26 @@ const ForgotPasswordScreen = () => {
         <View style={styles.root}>
             <Text style={styles.title}>Reset your password</Text>
             <CustomInput 
+                name='username'
                 placeholder="Username" 
-                value={username} 
-                setValue={setUsername} 
+                control={control}
+                rules= {{
+                    required:'Username is required',
+                    minLength: {
+                        value:3,
+                        message:'Username should have at least 3 characters'
+                    },
+                    maxLength: {
+                        value:24,
+                        message:'Username should have less than 24 characters'
+                    },
+                }} 
                 secureTextEntry={false}
             />
            
             <CustomButton 
-                text="Send" 
-                onPress={onSendPressed}
+                text={loading ? "Loading..." : "Send"} 
+                onPress={handleSubmit(onSendPressed)}
             />
 
             <CustomButton 

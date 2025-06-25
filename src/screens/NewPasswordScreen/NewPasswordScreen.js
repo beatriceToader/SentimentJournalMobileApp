@@ -1,17 +1,51 @@
 import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView} from 'react-native'
+import {View, Text, StyleSheet, Dimensions, ScrollView, Alert} from 'react-native'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
+import { useForm, Controller } from 'react-hook-form'
+import { confirmResetPassword } from 'aws-amplify/auth';
+import { useRoute } from '@react-navigation/native';
 
 const NewPasswordScreen = () => {
-    const [code, setCode] = useState('')
-    const [newPassword, setnewPassword] = useState('')
+    const route = useRoute();
+    const username = route?.params?.username;
+    const {control, handleSubmit} = useForm()
+    const [loading, setLoading] = useState(false)
 
     const navigation=useNavigation()
 
-    const onSubmitPressed = () => {
-        navigation.navigate('Home')
+    const onSubmitPressed = async(data) => {
+        if(loading){
+            return;
+        }
+
+        setLoading(true)
+
+        try {
+            await confirmResetPassword({
+                username,
+                newPassword: data.password,
+                confirmationCode: data.code,
+            });
+
+            Alert.alert('Success', 'Password reset successful. You can now sign in.');
+            navigation.navigate('SignIn');
+        } catch (e) {
+            console.log('Reset password error:', e);
+
+            let message = 'Something went wrong';
+            if (e.name === 'CodeMismatchException') {
+                message = 'Invalid confirmation code';
+            } else if (e.name === 'ExpiredCodeException') {
+                message = 'Code expired. Please request a new one.';
+            } else if (e.message) {
+                message = e.message;
+            }
+
+            Alert.alert('Ooops', message);
+        }
+        setLoading(false)
     }
 
     const onSignInPressed = () => {
@@ -23,22 +57,30 @@ const NewPasswordScreen = () => {
         <View style={styles.root}>
             <Text style={styles.title}>Reset your password</Text>
             <CustomInput 
+                name='code'
                 placeholder="Code" 
-                value={code} 
-                setValue={setCode} 
+                control={control}
+                rules={{required:'Code is required'}} 
                 secureTextEntry={false}
             />
 
             <CustomInput 
+                name='password'
                 placeholder="Enter new password" 
-                value={newPassword} 
-                setValue={setnewPassword} 
+                control={control}
+                rules= {{
+                    required:'Password is required',
+                    minLength: {
+                        value:8,
+                        message:'Password should have at least 3 characters'
+                    },
+                }}
                 secureTextEntry={true}
             />
            
             <CustomButton 
-                text="Submit" 
-                onPress={onSubmitPressed}
+                text={loading ? "Loading..." : "Submit"} 
+                onPress={handleSubmit(onSubmitPressed)}
             />
 
             <CustomButton 

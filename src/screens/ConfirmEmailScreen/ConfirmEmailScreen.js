@@ -1,20 +1,66 @@
 import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView} from 'react-native'
+import {View, Text, StyleSheet, Dimensions, ScrollView, Alert} from 'react-native'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useForm, Controller } from 'react-hook-form'
+import { confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 
 const ConfirmEmailScreen = () => {
-    const [code, setCode] = useState('')
+    const route = useRoute()
+    const {control, handleSubmit} = useForm({defaultValues: {username: route?.params?.username}})
+    
 
     const navigation = useNavigation();
 
-    const onConfirmPressed = () => {
-        navigation.navigate('Home')
+    const onConfirmPressed = async(data) => {
+        try{
+            await confirmSignUp({
+                username: data.username,
+                confirmationCode: data.code,
+            });
+
+            Alert.alert('Success', 'Email confirmed. Please sign in.');
+            navigation.navigate('SignIn');
+
+        } catch(e){
+            console.log('Confirm sign up error', e);
+            let message = 'Something went wrong';
+
+            if (e.name === 'CodeMismatchException') {
+                message = 'Invalid confirmation code';
+            } else if (e.name === 'UserNotFoundException') {
+                message = 'User not found';
+            } else if (e.name === 'NotAuthorizedException') {
+                message = 'User already confirmed';
+            } else if (e.message) {
+                message = e.message;
+            }
+
+            Alert.alert('Ooops', message);
+        }
     }
 
-    const onResendCodePressed = () => {
-        console.warn("onResendCodePressed")
+    const onResendCodePressed = async() => {
+        try {
+            const username = control._formValues.username; // sau poți folosi watch('username') dacă îl imporți
+
+            await resendSignUpCode({ username });
+            Alert.alert('Success', 'Confirmation code resent to your email.');
+        } catch (e) {
+            console.log('Resend code error', e);
+            let message = 'Could not resend code';
+
+            if (e.name === 'UserNotFoundException') {
+                message = 'User not found';
+            } else if (e.name === 'InvalidParameterException') {
+                message = 'Invalid username';
+            } else if (e.message) {
+                message = e.message;
+            }
+
+            Alert.alert('Ooops', message);
+        }
     }
 
     const onSignInPressed = () => {
@@ -25,16 +71,25 @@ const ConfirmEmailScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.root}>
             <Text style={styles.title}>Confirm your email</Text>
-            <CustomInput 
+            <CustomInput
+                name='username' 
+                placeholder="Username" 
+                control={control}
+                rules={{required:'Username is required'}} 
+                secureTextEntry={false}
+            />
+
+            <CustomInput
+                name='code' 
                 placeholder="Enter confirmation code" 
-                value={code} 
-                setValue={setCode} 
+                control={control}
+                rules={{required:'Code is required'}} 
                 secureTextEntry={false}
             />
            
             <CustomButton 
                 text="Confirm" 
-                onPress={onConfirmPressed}
+                onPress={handleSubmit(onConfirmPressed)}
             />
 
             <CustomButton 
