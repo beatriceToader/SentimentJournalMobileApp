@@ -168,12 +168,12 @@ const saveJournalEntry = async (text, sentiment, confidence) => {
 />
 
 
-        {/* <CustomButton
+        { <CustomButton
           text={loading ? 'Loading...' : 'Sign Out'}
           onPress={handleSignOut}
           type="SECONDARY"
         />
-        <CustomButton
+       /* <CustomButton
   text="Add Test Entry (May 1)"
   onPress={() => createTestEntry(
     "Test from May 1",
