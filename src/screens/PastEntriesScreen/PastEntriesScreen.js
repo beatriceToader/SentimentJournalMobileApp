@@ -127,7 +127,9 @@ const PastEntriesScreen = () => {
             )}
           </View>
 
-          <CustomButton text="Apply Date Filter" onPress={fetchEntries} />
+          <View style={{ alignItems: 'center' }}>
+  <CustomButton text="Apply Date Filter" onPress={fetchEntries} />
+</View>
         </View>
 
         {loading ? (
