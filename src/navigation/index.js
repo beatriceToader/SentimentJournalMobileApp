@@ -11,8 +11,13 @@ import HomeScreen from '../screens/HomeScreen';
 import ResultsScreen from '../screens/ResultsScreen';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
+import PastEntriesScreen from '../screens/PastEntriesScreen';
 
 const Stack = createNativeStackNavigator();
+
+
+
+
 
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -28,6 +33,7 @@ const AppStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="Result" component={ResultsScreen} />
+    <Stack.Screen name="PastEntries" component={PastEntriesScreen} />
   </Stack.Navigator>
 );
 

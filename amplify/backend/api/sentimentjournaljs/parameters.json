@@ -1,0 +1,12 @@
+{
+  "AppSyncApiName": "sentimentjournaljs",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthModeLastUpdated": "2025-06-28T18:00:33.886Z",
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authsentimentjournaljs2a72562d",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

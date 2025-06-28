@@ -22,7 +22,8 @@
         }
       },
       "api": {
-        "moodApi": {}
+        "moodApi": {},
+        "sentimentjournaljs": {}
       }
     }
   }
