@@ -6,7 +6,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
@@ -17,6 +19,11 @@ const PastEntriesScreen = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
 
   const fetchEntries = async () => {
     setLoading(true);
@@ -38,7 +45,15 @@ const PastEntriesScreen = () => {
 
       const allItems = result.data.listJournalEntries.items;
       const userItems = allItems.filter(entry => entry.username === username);
-      setEntries(userItems);
+
+      const filteredItems = userItems.filter(entry => {
+        const createdAt = new Date(entry.createdAt);
+        const afterFrom = fromDate ? createdAt >= fromDate : true;
+        const beforeTo = toDate ? createdAt <= toDate : true;
+        return afterFrom && beforeTo;
+      });
+
+      setEntries(filteredItems);
     } catch (e) {
       console.error('Error fetching journal entries:', e);
     }
@@ -63,6 +78,58 @@ const PastEntriesScreen = () => {
       <View style={styles.root}>
         <Text style={styles.title}>Past Journal Entries</Text>
 
+        <View style={styles.dateContainer}>
+          <View style={styles.datePickerGroup}>
+            <Text style={styles.dateLabel}>From:</Text>
+            <TouchableOpacity
+              onPress={() => setShowFromPicker(true)}
+              style={styles.dateButton}
+            >
+              <Text style={styles.dateButtonText}>
+                {fromDate ? fromDate.toDateString() : 'Select date'}
+              </Text>
+            </TouchableOpacity>
+            {showFromPicker && (
+              <DateTimePicker
+                value={fromDate || new Date()}
+                mode="date"
+                display="spinner"
+                themeVariant="light"
+                onChange={(event, selectedDate) => {
+                  setShowFromPicker(false);
+                  if (selectedDate) setFromDate(selectedDate);
+                }}
+              />
+            )}
+          </View>
+
+          <View style={styles.datePickerGroup}>
+            <Text style={styles.dateLabel}>To:</Text>
+            <TouchableOpacity
+              onPress={() => setShowToPicker(true)}
+              style={styles.dateButton}
+            >
+              <Text style={styles.dateButtonText}>
+                {toDate ? toDate.toDateString() : 'Select date'}
+              </Text>
+            </TouchableOpacity>
+            {showToPicker && (
+              <DateTimePicker
+                value={toDate || new Date()}
+                mode="date"
+                display="spinner"
+                themeVariant="light"
+                onChange={(event, selectedDate) => {
+                  setShowToPicker(false);
+                  if (selectedDate) setToDate(selectedDate);
+                }}
+              />
+            )}
+          </View>
+
+          <CustomButton text="Apply Date Filter" onPress={fetchEntries} />
+        </View>
+
         {loading ? (
           <ActivityIndicator size="large" color="#58185e" />
         ) : entries.length === 0 ? (
@@ -81,7 +148,15 @@ const PastEntriesScreen = () => {
           ))
         )}
 
-        <CustomButton text="Refresh Entries" onPress={fetchEntries} />
+        <CustomButton
+          text="Refresh All Entries"
+          onPress={() => {
+            setFromDate(null);
+            setToDate(null);
+            fetchEntries();
+          }}
+        />
+
         <CustomButton
           text="Back to Home"
           onPress={() => navigation.navigate('Home')}
@@ -148,6 +223,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#58185e',
     marginBottom: 3,
+  },
+  dateContainer: {
+    width: '100%',
+    marginBottom: 30,
+    backgroundColor: '#f8e7cd',
+    padding: 12,
+    borderRadius: 10,
+  },
+  datePickerGroup: {
+    marginBottom: 15,
+  },
+  dateLabel: {
+    fontSize: 14,
+    color: '#58185e',
+    marginBottom: 6,
+  },
+  dateButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: '#333',
   },
 });
 

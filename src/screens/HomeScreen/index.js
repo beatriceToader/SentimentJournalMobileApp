@@ -113,6 +113,31 @@ const saveJournalEntry = async (text, sentiment, confidence) => {
   }
 };
 
+// const createTestEntry = async (text, sentiment, dateISO) => {
+//   try {
+//     const user = await getCurrentUser();
+//     const username = user?.username ?? 'guest';
+
+//     const client = generateClient();
+
+//     await client.graphql({
+//       query: createJournalEntry,
+//       variables: {
+//         input: {
+//           text,
+//           sentiment,
+//           createdAt: dateISO,
+//           username,
+//         },
+//       },
+//     });
+
+//     console.log('Test entry added');
+//   } catch (e) {
+//     console.error('Error adding test entry:', e);
+//   }
+// };
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.root}>
@@ -143,11 +168,19 @@ const saveJournalEntry = async (text, sentiment, confidence) => {
 />
 
 
-        <CustomButton
+        {/* <CustomButton
           text={loading ? 'Loading...' : 'Sign Out'}
           onPress={handleSignOut}
           type="SECONDARY"
         />
+        <CustomButton
+  text="Add Test Entry (May 1)"
+  onPress={() => createTestEntry(
+    "Test from May 1",
+    "POSITIVE",
+    new Date('2025-05-01T10:00:00.000Z').toISOString()
+  )}
+/> */}
       </View>
     </ScrollView>
   )
