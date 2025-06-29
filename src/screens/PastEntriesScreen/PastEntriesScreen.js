@@ -46,12 +46,25 @@ const PastEntriesScreen = () => {
       const allItems = result.data.listJournalEntries.items;
       const userItems = allItems.filter(entry => entry.username === username);
 
-      const filteredItems = userItems.filter(entry => {
-        const createdAt = new Date(entry.createdAt);
-        const afterFrom = fromDate ? createdAt >= fromDate : true;
-        const beforeTo = toDate ? createdAt <= toDate : true;
-        return afterFrom && beforeTo;
-      });
+const filteredItems = userItems.filter(entry => {
+  const createdAt = new Date(entry.createdAt);
+
+  const normalizedCreatedAt = new Date(
+    createdAt.getFullYear(),
+    createdAt.getMonth(),
+    createdAt.getDate()
+  );
+
+  const isAfterFrom = fromDate
+    ? normalizedCreatedAt >= new Date(fromDate.setHours(0, 0, 0, 0))
+    : true;
+
+  const isBeforeTo = toDate
+    ? normalizedCreatedAt <= new Date(toDate.setHours(23, 59, 59, 999))
+    : true;
+
+  return isAfterFrom && isBeforeTo;
+});
 
       setEntries(filteredItems);
     } catch (e) {
