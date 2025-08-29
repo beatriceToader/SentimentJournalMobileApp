@@ -63,20 +63,21 @@ const HomeScreen = () => {
 
       console.log('Sentiment result:', result)
 
+      let confidence = result.scores[
+            result.sentiment.charAt(0).toUpperCase() +
+              result.sentiment.slice(1).toLowerCase()
+          ]
+
       // Save entry in DB
       await saveJournalEntry(
         text,
         result.sentiment,
-        result.scores[result.sentiment]
+        confidence
       )
 
       navigation.navigate('Result', {
         sentiment: result.sentiment,
-        confidence:
-          result.scores[
-            result.sentiment.charAt(0).toUpperCase() +
-              result.sentiment.slice(1).toLowerCase()
-          ],
+        confidence: confidence,
         entry: text
       })
     } catch (e) {
@@ -105,6 +106,7 @@ const saveJournalEntry = async (text, sentiment, confidence) => {
           username,
         },
       },
+      authMode: 'apiKey',
     });
 
     console.log('Journal entry saved:', result);

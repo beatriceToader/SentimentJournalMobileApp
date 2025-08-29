@@ -41,6 +41,7 @@ const PastEntriesScreen = () => {
       const result = await client.graphql({
         query: queries.listJournalEntries,
         variables: {},
+        authMode: 'apiKey',
       });
 
       const allItems = result.data.listJournalEntries.items;
