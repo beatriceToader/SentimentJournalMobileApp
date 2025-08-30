@@ -1,6 +1,5 @@
 import React, {useState} from 'react'
 import {View, TextInput, Image, StyleSheet, Dimensions, ScrollView} from 'react-native'
-import Logo from '../../../assets/images/mood-journal-logo.png'
 import CustomInput from '../../components/CustomInput'
 import CustomButton from '../../components/CustomButton'
 import { useNavigation } from '@react-navigation/native'
@@ -58,11 +57,6 @@ const SignInScreen = () => {
     return(
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.root}>
-            <Image 
-                source={Logo}
-                style={styles.logo} 
-                resizeMode='contained'
-            />
             <CustomInput 
                 name='username'
                 placeholder="Username" 
@@ -117,14 +111,6 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         paddingHorizontal: 20,
     },
-    logo:{
-        width: windowWidth * 0.7,
-        height: windowHeight * 0.2,
-        maxWidth: 300,
-        maxHeight: 200,
-        marginTop: 20,
-        borderRadius: 5
-    }
 })
 
 export default SignInScreen

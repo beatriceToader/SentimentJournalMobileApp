@@ -1,7 +1,6 @@
 import React, {useState} from 'react'
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native'
 import CustomButton from '../../components/CustomButton'
-import Logo from '../../../assets/images/mood-journal-logo.png'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { signOut } from 'aws-amplify/auth';
 
@@ -37,7 +36,6 @@ const ResultsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Image source={Logo} style={styles.logo} resizeMode='contain' />
 
             <Text style={styles.title}>Journal Entry</Text>
 
@@ -67,11 +65,6 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: '#fbdbab',
         alignItems: 'center'
-    },
-    logo: {
-        width: width * 0.5,
-        height: width * 0.5,
-        marginTop: 20
     },
     title: {
         fontSize: 28,
