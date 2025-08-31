@@ -1,272 +1,150 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser, signOut } from 'aws-amplify/auth';
+import { getCurrentUser } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
-import CustomButton from '../../components/CustomButton';
+import { colors, spacing, radius, type } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
+import ScreenHeader from '../../components/ScreenHeader';
 
 const PastEntriesScreen = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
-  const [showFromPicker, setShowFromPicker] = useState(false);
-  const [showToPicker, setShowToPicker] = useState(false);
-
   const fetchEntries = async () => {
     setLoading(true);
     const client = generateClient();
-    let username = null;
-
+    let username = 'guest';
     try {
       const user = await getCurrentUser();
-      username = user.username;
-    } catch {
-      username = 'guest';
-    }
+      username = user?.username ?? 'guest';
+    } catch {}
 
     try {
       const result = await client.graphql({
         query: queries.listJournalEntries,
         variables: {},
-        authMode: 'apiKey',
+        authMode: 'apiKey', // keep if your API default is API key
       });
 
-      const allItems = result.data.listJournalEntries.items;
-      const userItems = allItems.filter(entry => entry.username === username);
+      const all = result.data.listJournalEntries.items || [];
+      const userItems = all
+        .filter((e) => e.username === username)
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-const filteredItems = userItems.filter(entry => {
-  const createdAt = new Date(entry.createdAt);
-
-  const normalizedCreatedAt = new Date(
-    createdAt.getFullYear(),
-    createdAt.getMonth(),
-    createdAt.getDate()
-  );
-
-  const isAfterFrom = fromDate
-    ? normalizedCreatedAt >= new Date(fromDate.setHours(0, 0, 0, 0))
-    : true;
-
-  const isBeforeTo = toDate
-    ? normalizedCreatedAt <= new Date(toDate.setHours(23, 59, 59, 999))
-    : true;
-
-  return isAfterFrom && isBeforeTo;
-});
-
-      setEntries(filteredItems);
+      setEntries(userItems);
     } catch (e) {
       console.error('Error fetching journal entries:', e);
     }
-
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchEntries();
-  }, []);
+  useEffect(() => { fetchEntries(); }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (e) {
-      console.log('Sign out error:', e);
+  // Map date (YYYY-MM-DD) -> entries[]
+  const entriesByDate = useMemo(() => {
+    const map = {};
+    for (const e of entries) {
+      const d = new Date(e.createdAt);
+      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      if (!map[key]) map[key] = [];
+      map[key].push(e);
     }
+    return map;
+  }, [entries]);
+
+  // Mark dates that have entries
+  const markedDates = useMemo(() => {
+    const md = {};
+    Object.keys(entriesByDate).forEach((day) => {
+      md[day] = {
+        marked: true,
+        dotColor: colors.primary,
+        selected: false,
+      };
+    });
+    return md;
+  }, [entriesByDate]);
+
+  const onDayPress = (day) => {
+    const { dateString } = day; // YYYY-MM-DD
+    const dayEntries = entriesByDate[dateString] || [];
+    navigation.navigate('EntryDetail', {
+      date: dateString,
+      entries: dayEntries,
+    });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.root}>
-        <Text style={styles.title}>Past Journal Entries</Text>
-
-        <View style={styles.dateContainer}>
-          <View style={styles.datePickerGroup}>
-            <Text style={styles.dateLabel}>From:</Text>
-            <TouchableOpacity
-              onPress={() => setShowFromPicker(true)}
-              style={styles.dateButton}
-            >
-              <Text style={styles.dateButtonText}>
-                {fromDate ? fromDate.toDateString() : 'Select date'}
-              </Text>
-            </TouchableOpacity>
-            {showFromPicker && (
-              <DateTimePicker
-                value={fromDate || new Date()}
-                mode="date"
-                display="spinner"
-                themeVariant="light"
-                onChange={(event, selectedDate) => {
-                  setShowFromPicker(false);
-                  if (selectedDate) setFromDate(selectedDate);
-                }}
-              />
-            )}
-          </View>
-
-          <View style={styles.datePickerGroup}>
-            <Text style={styles.dateLabel}>To:</Text>
-            <TouchableOpacity
-              onPress={() => setShowToPicker(true)}
-              style={styles.dateButton}
-            >
-              <Text style={styles.dateButtonText}>
-                {toDate ? toDate.toDateString() : 'Select date'}
-              </Text>
-            </TouchableOpacity>
-            {showToPicker && (
-              <DateTimePicker
-                value={toDate || new Date()}
-                mode="date"
-                display="spinner"
-                themeVariant="light"
-                onChange={(event, selectedDate) => {
-                  setShowToPicker(false);
-                  if (selectedDate) setToDate(selectedDate);
-                }}
-              />
-            )}
-          </View>
-
-          <View style={{ alignItems: 'center' }}>
-  <CustomButton text="Apply Date Filter" onPress={fetchEntries} />
-</View>
-        </View>
+    <ScrollView contentContainerStyle={[ styles.scroll, { paddingTop: spacing.xl + 24 } ]}>
+      <View style={styles.page}>
+        <ScreenHeader
+          label="Journal"
+          title="Your entries"
+          subtitle="Tap a date to see what you wrote"
+        />
 
         {loading ? (
-          <ActivityIndicator size="large" color="#58185e" />
-        ) : entries.length === 0 ? (
-          <Text style={styles.noEntryText}>No entries found.</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          entries.map(entry => (
-            <View key={entry.id} style={styles.entryCard}>
-              <Text style={styles.entryDate}>
-                {new Date(entry.createdAt).toLocaleString()}
-              </Text>
-              <Text style={styles.entryText}>{entry.text}</Text>
-              <Text style={styles.entrySentiment}>
-                Sentiment: {entry.sentiment ?? 'N/A'}
-              </Text>
+          <>
+            <View style={styles.card}>
+              <Calendar
+                onDayPress={onDayPress}
+                markedDates={markedDates}
+                enableSwipeMonths
+                theme={{
+                  backgroundColor: colors.card,
+                  calendarBackground: colors.card,
+                  textSectionTitleColor: colors.textMuted,
+                  selectedDayBackgroundColor: colors.primary,
+                  selectedDayTextColor: '#ffffff',
+                  todayTextColor: colors.primary,
+                  dayTextColor: colors.text,
+                  textDisabledColor: '#C8C8C8',
+                  dotColor: colors.primary,
+                  arrowColor: colors.primary,
+                  monthTextColor: colors.text,
+                  textDayFontSize: type.body,
+                  textMonthFontSize: 18,
+                  textDayHeaderFontSize: 12,
+                  textDayFontWeight: '500',
+                  textMonthFontWeight: '700',
+                  textDayHeaderFontWeight: '600',
+                }}
+                style={{ borderRadius: radius.lg }}
+              />
             </View>
-          ))
+
+            <Text style={styles.secondary}>
+              {Object.keys(entriesByDate).length
+                ? 'Days with dots have saved entries.'
+                : 'No entries yet — write one from the Home tab.'}
+            </Text>
+          </>
         )}
-
-        <CustomButton
-          text="Refresh All Entries"
-          onPress={() => {
-            setFromDate(null);
-            setToDate(null);
-            fetchEntries();
-          }}
-        />
-
-        <CustomButton
-          text="Back to Home"
-          onPress={() => navigation.navigate('Home')}
-          type="PRIMARY"
-        />
-        <CustomButton
-          text="Sign Out"
-          onPress={handleSignOut}
-          type="SECONDARY"
-        />
       </View>
     </ScrollView>
   );
 };
 
-const { width, height } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: '#fbdbab',
-  },
-  root: {
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    minHeight: height,
-    backgroundColor: '#fbdbab',
-  },
+  scroll: { flexGrow: 1, backgroundColor: colors.bg, padding: spacing.lg },
+  page: { width: '100%', maxWidth: 680, alignSelf: 'center' },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#58185e',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontSize: 22, fontWeight: '800', color: colors.text,
+    textAlign: 'center', marginBottom: spacing.lg,
   },
-  noEntryText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 20,
+  card: {
+    backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg,
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    elevation: 2, marginBottom: spacing.lg,
   },
-  entryCard: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  entryDate: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 5,
-  },
-  entryText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
-  },
-  entrySentiment: {
-    fontSize: 14,
-    color: '#58185e',
-    marginBottom: 3,
-  },
-  dateContainer: {
-    width: '100%',
-    marginBottom: 30,
-    backgroundColor: '#f8e7cd',
-    padding: 12,
-    borderRadius: 10,
-  },
-  datePickerGroup: {
-    marginBottom: 15,
-  },
-  dateLabel: {
-    fontSize: 14,
-    color: '#58185e',
-    marginBottom: 6,
-  },
-  dateButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-  dateButtonText: {
-    fontSize: 14,
-    color: '#333',
-  },
+  hint: { marginTop: spacing.sm, textAlign: 'center', color: colors.textMuted, fontSize: type.small },
+  secondary: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.sm },
 });
 
 export default PastEntriesScreen;

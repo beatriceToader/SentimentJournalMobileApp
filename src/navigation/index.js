@@ -13,6 +13,7 @@ import SignUpScreen from '../screens/SignUpScreen';
 import ConfirmEmailScreen from '../screens/ConfirmEmailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import NewPasswordScreen from '../screens/NewPasswordScreen';
+import EntryDetailScreen from '../screens/EntryDetailScreen';
 
 // app screens
 import HomeScreen from '../screens/HomeScreen';
@@ -45,6 +46,17 @@ const HomeStack = () => (
   </Stack.Navigator>
 );
 
+// create a stack for entries
+const EntriesStackNav = createNativeStackNavigator();
+
+const EntriesStack = () => (
+  <EntriesStackNav.Navigator screenOptions={{ headerShown: false }}>
+    <EntriesStackNav.Screen name="PastEntriesMain" component={PastEntriesScreen} />
+    <EntriesStackNav.Screen name="EntryDetail" component={EntryDetailScreen} />
+  </EntriesStackNav.Navigator>
+);
+
+
 /* ---------- fixed bottom tabs ---------- */
 const AppTabs = () => {
   const insets = useSafeAreaInsets();
@@ -76,7 +88,7 @@ const AppTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Entries" component={PastEntriesScreen} />
+      <Tab.Screen name="Entries" component={EntriesStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -9,7 +9,7 @@ import CustomButton from '../../components/CustomButton';
 import { createJournalEntry } from '../../graphql/mutations';
 import { colors, spacing, radius, type } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
-
+import ScreenHeader from '../../components/ScreenHeader';
 
 const TAB_HEIGHT = 56;
 
@@ -64,56 +64,57 @@ const HomeScreen = () => {
   const insets = useSafeAreaInsets();
 
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+return (
+  <SafeAreaView style={styles.safe}>
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={[
+          styles.scroll,
+          // push content a bit lower; tweak 24→32 if you want more
+          { paddingTop: spacing.xl + 24, paddingBottom: spacing.xl + TAB_HEIGHT + insets.bottom },
+        ]}
       >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={[
-            styles.scroll,
-            { paddingBottom: spacing.xl + TAB_HEIGHT + insets.bottom },
-          ]}
-        >
-          {/* Page container centers everything with a comfy max width */}
-          <View style={styles.page}>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>How are you feeling today?</Text>
+        <View style={styles.page}>
+          <ScreenHeader
+            label="Dashboard"
+            title="Welcome back"
+            subtitle="How are you feeling today?"
+          />
 
-            <View style={styles.card}>
-              <Text style={styles.label}>Your entry</Text>
+          {/* ONLY this card under the header — no other views/inputs above it */}
+          <View style={styles.card}>
+            <Text style={styles.label}>Your entry</Text>
 
-              <TextInput
-                style={styles.textArea}
-                placeholder="Write your mood or thoughts..."
-                placeholderTextColor={colors.textMuted}
-                multiline
-                numberOfLines={8}
-                value={entry}
-                onChangeText={setEntry}
-                maxLength={2000}
-              />
+            <TextInput
+              style={styles.textArea}
+              placeholder="Write your mood or thoughts..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={8}
+              value={entry}
+              onChangeText={setEntry}
+              maxLength={2000}
+            />
 
-              <View style={styles.actions}>
-                <CustomButton
-                  text={loadingAnalyze ? 'Analyzing…' : 'Analyze'}
-                  onPress={() => handleAnalyze(entry)}
+            <View style={styles.actions}>
+              <CustomButton
+                text={loadingAnalyze ? 'Analyzing…' : 'Analyze'}
+                onPress={() => handleAnalyze(entry)}
                   disabled={!entry.trim() || loadingAnalyze}
                   type="PRIMARY"
-                />
+              />
                 <Text style={styles.hint}>
                   Tip: write naturally — we’ll analyze and save it.
                 </Text>
-              </View>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
+);
 };
 
 const styles = StyleSheet.create({
