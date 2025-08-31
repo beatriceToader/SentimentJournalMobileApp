@@ -2,6 +2,14 @@
 # all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
 input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
 
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_SAY
+}
+
+
 type Todo @model {
   id: ID!
   name: String!
@@ -17,4 +25,16 @@ type JournalEntry @model @auth(rules: [
   confidence: Float
   createdAt: AWSDateTime
   username: String
+}
+
+type UserProfile @model @auth(rules: [{ allow: public }]) {
+  id: ID!            # use username as the ID
+  username: String!
+  displayName: String
+  email: AWSEmail
+  bio: String
+  age: Int           # 0..120 recommended; leave nullable
+  gender: Gender     # nullable; use enum for clean values
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }
