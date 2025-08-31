@@ -53,6 +53,7 @@ const EntriesStack = () => (
   <EntriesStackNav.Navigator screenOptions={{ headerShown: false }}>
     <EntriesStackNav.Screen name="PastEntriesMain" component={PastEntriesScreen} />
     <EntriesStackNav.Screen name="EntryDetail" component={EntryDetailScreen} />
+    <EntriesStackNav.Screen name="Result" component={ResultsScreen} />
   </EntriesStackNav.Navigator>
 );
 
