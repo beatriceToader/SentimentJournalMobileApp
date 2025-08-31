@@ -38,12 +38,12 @@ const styles = StyleSheet.create({
 
   // prettier pink that matches your background (#fbdbab and theme)
   container_PRIMARY: {
-    backgroundColor: '#E75480', // softer professional pink
+    backgroundColor: '#58185e', // softer professional pink
   },
   container_SECONDARY: {
     backgroundColor: '#fff',
     borderWidth: 2,
-    borderColor: '#E75480',
+    borderColor: '#58185e',
   },
   container_TERTIARY: {
     backgroundColor: 'transparent',
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   text_SECONDARY: {
-    color: '#E75480',
+    color: '#58185e',
   },
   text_TERTIARY: {
     color: colors.textMuted,
