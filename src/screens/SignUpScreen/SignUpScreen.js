@@ -1,168 +1,219 @@
-import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView} from 'react-native'
-import CustomInput from '../../components/CustomInput'
-import CustomButton from '../../components/CustomButton'
-import { useNavigation } from '@react-navigation/native'
-import { useForm, Controller } from 'react-hook-form'
+// src/screens/SignUpScreen/SignUpScreen.js
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+  Text,
+  Pressable,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useForm } from 'react-hook-form';
 import { signUp } from 'aws-amplify/auth';
-import { Alert } from 'react-native';
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+import CustomInput from '../../components/CustomInput';
+import CustomButton from '../../components/CustomButton';
+import ScreenHeader from '../../components/ScreenHeader';
+import { colors, spacing, radius, type } from '../../theme';
+
+const APP_NAME = 'Sentiment Journal';
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const SignUpScreen = () => {
-    const {control, handleSubmit, watch} = useForm()
-    const pwd = watch('password')
-    const [loading, setLoading] = useState(false)
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
-    const navigation = useNavigation();
+  const {
+    control,
+    handleSubmit,
+    watch,
+  } = useForm();
 
-    const onRegisterPressed = async (data) => {
-        if(loading){
-            return;
-        }
+  const pwd = watch('password');
 
-        setLoading(true)
-
-        try{
-            const {username, password, email}=data;
-            const response = await signUp({
-                username,
-                password,
-                options: {
-                    userAttributes:{
-                        email
-                    }
-                }
-            })
-            navigation.navigate('ConfirmEmail',{username})
-        }catch(e){
-            console.error('Sign up error', e);
-            Alert.alert('Ooops', e.message)
-        }
-        setLoading(false)
+  const onRegisterPressed = async (data) => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { username, password, email } = data;
+      await signUp({
+        username,
+        password,
+        options: { userAttributes: { email } },
+      });
+      navigation.navigate('ConfirmEmail', { username });
+    } catch (e) {
+      console.error('Sign up error', e);
+      Alert.alert('Sign up failed', e?.message || 'Please try again.');
     }
+    setLoading(false);
+  };
 
-    const onTermsOfUsePressed = () => {
-        console.warn("TermOfUse")
-    }
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.page}>
+          <ScreenHeader
+            label={APP_NAME}
+            title="Create your account"
+            subtitle="Start tracking your mood and entries"
+          />
 
-    const onPrivacyPolicyPressed = () => {
-        console.warn("PrivacyPolicy")
-    }
-
-    const onSignInPressed = () => {
-        navigation.navigate('SignIn')
-    }
-
-    return(
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.root}>
-            <Text style={styles.title}>Create Account</Text>
-            <CustomInput
-                name='username' 
-                placeholder="Username" 
+          <View style={styles.card}>
+            <View style={styles.inputs}>
+              <CustomInput
+                name="username"
+                placeholder="Username"
                 control={control}
-                rules= {{
-                    required:'Username is required',
-                    minLength: {
-                        value:3,
-                        message:'Username should have at least 3 characters'
-                    },
-                    maxLength: {
-                        value:24,
-                        message:'Username should have less than 24 characters'
-                    },
-                }} 
-                secureTextEntry={false}
-            />
-            <CustomInput 
-                name='email'
-                placeholder="Email" 
+                rules={{
+                  required: 'Username is required',
+                  minLength: {
+                    value: 3,
+                    message: 'Username must be at least 3 characters',
+                  },
+                  maxLength: {
+                    value: 24,
+                    message: 'Username must be under 24 characters',
+                  },
+                }}
+              />
+
+              <CustomInput
+                name="email"
+                placeholder="Email"
                 control={control}
-                rules= {{required:'Email is required', pattern: {value: EMAIL_REGEX, message:'Email is invalid'}}} 
-                secureTextEntry={false}
-            />
-            <CustomInput
-                name='password' 
-                placeholder="Password" 
+                rules={{
+                  required: 'Email is required',
+                  pattern: { value: EMAIL_REGEX, message: 'Enter a valid email' },
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <CustomInput
+                name="password"
+                placeholder="Password"
                 control={control}
-                rules= {{
-                    required:'Password is required',
-                    minLength: {
-                        value:8,
-                        message:'Password should have at least 3 characters'
-                    },
-                }}  
-                secureTextEntry={true}
-            />
-            <CustomInput 
-                name='repeatPassword'
-                placeholder="Repeat Password" 
+                rules={{
+                  required: 'Password is required',
+                  minLength: {
+                    value: 8,
+                    message: 'Password must be at least 8 characters',
+                  },
+                }}
+                secureTextEntry
+              />
+
+              <CustomInput
+                name="repeatPassword"
+                placeholder="Repeat password"
                 control={control}
-                rules= {{
-                    required:'Repeat Password is required',
-                    validate: value => 
-                        value === pwd || 'Passwords do not match'
-                }} 
-                secureTextEntry={true}
-            />
-            <CustomButton 
-                text={loading ? "Loading...":"Register"} 
-                onPress={handleSubmit(onRegisterPressed)}
+                rules={{
+                  required: 'Please confirm your password',
+                  validate: (v) => v === pwd || 'Passwords do not match',
+                }}
+                secureTextEntry
+              />
+            </View>
+
+            <CustomButton
+              text={loading ? 'Creating account…' : 'Create account'}
+              onPress={handleSubmit(onRegisterPressed)}
+              loading={loading}
             />
 
-            <Text style={styles.text}>By registering, you confirm that you accept our{' '}<Text style={styles.link} onPress={onTermsOfUsePressed}>Terms of Use</Text> and{' '}  
-                                    <Text style={styles.link} onPress={onPrivacyPolicyPressed}>Privacy Policy</Text> </Text>
+            {/* Legal links */}
+            <Text style={styles.legal}>
+              By creating an account, you agree to our{' '}
+              <Text style={styles.link} onPress={() => Alert.alert('Terms of Use')}>
+                Terms of Use
+              </Text>{' '}
+              and{' '}
+              <Text style={styles.link} onPress={() => Alert.alert('Privacy Policy')}>
+                Privacy Policy
+              </Text>.
+            </Text>
 
-            <CustomButton 
-                text="Have an account? Sign In" 
-                onPress={onSignInPressed}
-                type="TERTIARY"    
-            />
-            
+            {/* Switch to sign in */}
+            <View style={styles.switchRow}>
+              <Text style={styles.switchText}>Already have an account?</Text>
+              <Pressable onPress={() => navigation.navigate('SignIn')} hitSlop={8}>
+                <Text style={styles.switchLink}>Sign in</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-        </ScrollView>
-    )
-}
-
-const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,          // face ca ScrollView să se extindă complet
-        justifyContent: 'center',  // sau 'flex-start'
-        paddingVertical: 40,  // spațiu sus/jos
-        //paddingHorizontal: 20,
-        minWidth: Dimensions.get('window').width,
-        minHeight: Dimensions.get('window').height,
-        backgroundColor: '#fbdbab'
-    },
-    root:{
-        //flex: 1, // Ocupă tot ecranul
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-start', // aliniezi sus
-        paddingTop: 100, // distanță față de topul ecranului
-        paddingHorizontal: 20,
-        //alignSelf: 'stretch', 
-        //backgroundColor: 'white'
-    },
-    title:{
-        fontSize: 24,
-        fontWeight: 'bold',
-        color:'#58185e', 
-        margin: 10
-    },
-    text:{
-        color: 'gray',
-        marginVertical: 10,
-        padding: 15,
-    },
-    link:{
-        color: '#FDB075'
-    }
-})
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 2, // generous top spacing like Sign In
+    paddingBottom: spacing.xl,
+  },
+  page: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    width: '100%',
+    marginTop: spacing.lg,
+  },
+  inputs: {
+    width: '100%',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  legal: {
+    marginTop: spacing.md,
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  link: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  switchRow: {
+    marginTop: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  switchText: {
+    color: colors.textMuted,
+    fontSize: type.body,
+  },
+  switchLink: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: type.body,
+  },
+});
 
-export default SignUpScreen
+export default SignUpScreen;

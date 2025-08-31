@@ -1,144 +1,174 @@
-import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView, Alert} from 'react-native'
-import CustomInput from '../../components/CustomInput'
-import CustomButton from '../../components/CustomButton'
-import { useNavigation, useRoute } from '@react-navigation/native'
-import { useForm, Controller } from 'react-hook-form'
+// src/screens/ConfirmEmailScreen/ConfirmEmailScreen.js
+import React from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+  Text,
+  Pressable,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useForm } from 'react-hook-form';
 import { confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 
+import CustomInput from '../../components/CustomInput';
+import CustomButton from '../../components/CustomButton';
+import ScreenHeader from '../../components/ScreenHeader';
+import { colors, spacing, radius, type } from '../../theme';
+
+const APP_NAME = 'Sentiment Journal';
+
 const ConfirmEmailScreen = () => {
-    const route = useRoute()
-    const {control, handleSubmit} = useForm({defaultValues: {username: route?.params?.username}})
-    
+  const navigation = useNavigation();
+  const route = useRoute();
 
-    const navigation = useNavigation();
+  const { control, handleSubmit, watch } = useForm({
+    defaultValues: { username: route?.params?.username || '' },
+  });
 
-    const onConfirmPressed = async(data) => {
-        try{
-            await confirmSignUp({
-                username: data.username,
-                confirmationCode: data.code,
-            });
+  const usernameValue = watch('username');
 
-            Alert.alert('Success', 'Email confirmed. Please sign in.');
-            navigation.navigate('SignIn');
-
-        } catch(e){
-            console.log('Confirm sign up error', e);
-            let message = 'Something went wrong';
-
-            if (e.name === 'CodeMismatchException') {
-                message = 'Invalid confirmation code';
-            } else if (e.name === 'UserNotFoundException') {
-                message = 'User not found';
-            } else if (e.name === 'NotAuthorizedException') {
-                message = 'User already confirmed';
-            } else if (e.message) {
-                message = e.message;
-            }
-
-            Alert.alert('Ooops', message);
-        }
+  const onConfirmPressed = async (data) => {
+    try {
+      await confirmSignUp({
+        username: data.username,
+        confirmationCode: data.code,
+      });
+      Alert.alert('Success', 'Email confirmed. Please sign in.');
+      navigation.navigate('SignIn');
+    } catch (e) {
+      console.log('Confirm sign up error', e);
+      let message = 'Something went wrong';
+      if (e.name === 'CodeMismatchException') message = 'Invalid confirmation code';
+      else if (e.name === 'UserNotFoundException') message = 'User not found';
+      else if (e.name === 'NotAuthorizedException') message = 'User already confirmed';
+      else if (e.message) message = e.message;
+      Alert.alert('Oops', message);
     }
+  };
 
-    const onResendCodePressed = async() => {
-        try {
-            const username = control._formValues.username; // sau poți folosi watch('username') dacă îl imporți
-
-            await resendSignUpCode({ username });
-            Alert.alert('Success', 'Confirmation code resent to your email.');
-        } catch (e) {
-            console.log('Resend code error', e);
-            let message = 'Could not resend code';
-
-            if (e.name === 'UserNotFoundException') {
-                message = 'User not found';
-            } else if (e.name === 'InvalidParameterException') {
-                message = 'Invalid username';
-            } else if (e.message) {
-                message = e.message;
-            }
-
-            Alert.alert('Ooops', message);
-        }
+  const onResendCodePressed = async () => {
+    try {
+      await resendSignUpCode({ username: usernameValue });
+      Alert.alert('Success', 'We’ve sent a new code to your email.');
+    } catch (e) {
+      console.log('Resend code error', e);
+      let message = 'Could not resend code';
+      if (e.name === 'UserNotFoundException') message = 'User not found';
+      else if (e.name === 'InvalidParameterException') message = 'Invalid username';
+      else if (e.message) message = e.message;
+      Alert.alert('Oops', message);
     }
+  };
 
-    const onSignInPressed = () => {
-        navigation.navigate('SignIn')
-    }
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.page}>
+          <ScreenHeader
+            label={APP_NAME}
+            title="Confirm your email"
+            subtitle="Enter the code we sent to your inbox"
+          />
 
-    return(
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.root}>
-            <Text style={styles.title}>Confirm your email</Text>
-            <CustomInput
-                name='username' 
-                placeholder="Username" 
+          <View style={styles.card}>
+            <View style={styles.inputs}>
+              <CustomInput
+                name="username"
+                placeholder="Username"
                 control={control}
-                rules={{required:'Username is required'}} 
-                secureTextEntry={false}
-            />
+                rules={{ required: 'Username is required' }}
+                autoCapitalize="none"
+              />
 
-            <CustomInput
-                name='code' 
-                placeholder="Enter confirmation code" 
+              <CustomInput
+                name="code"
+                placeholder="Confirmation code"
                 control={control}
-                rules={{required:'Code is required'}} 
-                secureTextEntry={false}
-            />
-           
-            <CustomButton 
-                text="Confirm" 
-                onPress={handleSubmit(onConfirmPressed)}
-            />
+                rules={{ required: 'Code is required' }}
+                keyboardType="number-pad"
+                autoCapitalize="none"
+              />
+            </View>
 
-            <CustomButton 
-                text="Resend Code" 
-                onPress={onResendCodePressed}
-                type="SECONDARY"    
-            />
+            <CustomButton text="Confirm" onPress={handleSubmit(onConfirmPressed)} />
 
-            <CustomButton 
-                text="Back to Sign In" 
-                onPress={onSignInPressed}
-                type="TERTIARY"    
-            />
-            
+            <Text style={styles.helper}>
+              Didn’t receive a code? Check your spam folder or{' '}
+              <Text style={styles.link} onPress={onResendCodePressed}>
+                resend it
+              </Text>
+              .
+            </Text>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchText}>Back to</Text>
+              <Pressable onPress={() => navigation.navigate('SignIn')} hitSlop={8}>
+                <Text style={styles.switchLink}>Sign in</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-        </ScrollView>
-    )
-}
-
-const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,          // face ca ScrollView să se extindă complet
-        justifyContent: 'center',  // sau 'flex-start'
-        paddingVertical: 40,  // spațiu sus/jos
-        //paddingHorizontal: 20,
-        minWidth: Dimensions.get('window').width,
-        minHeight: Dimensions.get('window').height,
-        backgroundColor: '#fbdbab'
-    },
-    root:{
-        //flex: 1, // Ocupă tot ecranul
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-start', // aliniezi sus
-        paddingTop: 100, // distanță față de topul ecranului
-        paddingHorizontal: 20,
-        //alignSelf: 'stretch', 
-        //backgroundColor: 'white'
-    },
-    title:{
-        fontSize: 24,
-        fontWeight: 'bold',
-        color:'#58185e', 
-        margin: 10
-    },
-})
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 2,
+    paddingBottom: spacing.xl,
+  },
+  page: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    marginTop: spacing.lg,
+  },
+  inputs: {
+    width: '100%',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  helper: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  link: { color: colors.primary, fontWeight: '700' },
+  switchRow: {
+    marginTop: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  switchText: { color: colors.textMuted, fontSize: type.body },
+  switchLink: { color: colors.primary, fontWeight: '700', fontSize: type.body },
+});
 
-export default ConfirmEmailScreen
+export default ConfirmEmailScreen;
