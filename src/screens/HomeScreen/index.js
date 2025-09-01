@@ -10,10 +10,18 @@ import { createJournalEntry } from '../../graphql/mutations';
 import { colors, spacing, radius, type } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 const TAB_HEIGHT = 56;
 
 const HomeScreen = () => {
+      useFocusEffect(
+      useCallback(() => {
+        // reset the input whenever you arrive on Home
+        setEntry('');
+      }, [])
+    );
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
   const [entry, setEntry] = useState('');
   const navigation = useNavigation();

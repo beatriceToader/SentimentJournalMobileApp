@@ -88,9 +88,9 @@ const AppTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Entries" component={EntriesStack} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeStack} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Entries" component={EntriesStack} options={{ unmountOnBlur: true }} />
+      <Tab.Screen name="Profile" component={ProfileScreen}  />
     </Tab.Navigator>
   );
 };
