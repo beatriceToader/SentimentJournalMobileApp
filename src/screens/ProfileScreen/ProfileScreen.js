@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, Alert, ScrollView, SafeAreaView, TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ⬅️ NEW
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 
@@ -12,7 +13,6 @@ import { colors, spacing, radius, type } from '../../theme';
 import { getUserProfile } from '../../graphql/queries';
 import { createUserProfile, updateUserProfile } from '../../graphql/mutations';
 
-// Enum options EXACTLY as in schema
 const GENDER_OPTIONS = [
   { label: 'Female', value: 'FEMALE' },
   { label: 'Male', value: 'MALE' },
@@ -20,33 +20,29 @@ const GENDER_OPTIONS = [
   { label: 'Prefer not to say', value: 'PREFER_NOT_SAY' },
 ];
 
+const TAB_BAR_HEIGHT = 64; // conservative estimate
+
 const ProfileScreen = () => {
+  const insets = useSafeAreaInsets(); // ⬅️ NEW
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [username, setUsername] = useState('');
-
-  // Editable profile
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
-  const [age, setAge] = useState(null);          // number or null
-  const [gender, setGender] = useState('');      // one of enum values or ''
+  const [age, setAge] = useState(null);
+  const [gender, setGender] = useState('');
 
-  const initials = useMemo(() => {
-    const base = displayName || username || 'U';
-    return base.slice(0, 2).toUpperCase();
-  }, [displayName, username]);
+  const initials = useMemo(() => (displayName || username || 'U').slice(0, 2).toUpperCase(), [displayName, username]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        // Only need username from User Pools
         const u = await getCurrentUser();
         const uName = u?.username ?? '';
         setUsername(uName);
 
-        // Fetch/create profile
         const client = generateClient();
         const res = await client.graphql({
           query: getUserProfile,
@@ -59,21 +55,11 @@ const ProfileScreen = () => {
           setDisplayName(p.displayName ?? '');
           setBio(p.bio ?? '');
           setAge(typeof p.age === 'number' ? p.age : null);
-          setGender(p.gender ?? ''); // NOTE: will be one of the enum strings, or null
+          setGender(p.gender ?? '');
         } else {
-          // Create default record — no email (removed)
           await client.graphql({
             query: createUserProfile,
-            variables: {
-              input: {
-                id: uName,
-                username: uName,
-                displayName: '',
-                bio: '',
-                age: null,
-                gender: null,
-              },
-            },
+            variables: { input: { id: uName, username: uName, displayName: '', bio: '', age: null, gender: null } },
             authMode: 'apiKey',
           });
         }
@@ -83,37 +69,24 @@ const ProfileScreen = () => {
         setLoading(false);
       }
     };
-
     load();
   }, []);
 
   const handleSave = async () => {
     if (!username) return;
-
-    // Validate age if provided
-    let ageInt = age === null || age === '' ? null : parseInt(String(age), 10);
+    const ageInt = age === null || age === '' ? null : parseInt(String(age), 10);
     if (ageInt !== null && (Number.isNaN(ageInt) || ageInt < 13 || ageInt > 120)) {
       Alert.alert('Invalid age', 'Please enter an age between 13 and 120.');
       return;
     }
-
-    // Build input dynamically; DO NOT send invalid enum or empty string
-    const input = {
-      id: username,
-      displayName,
-      bio,
-    };
+    const input = { id: username, displayName, bio };
     if (ageInt !== null) input.age = ageInt;
-    if (gender) input.gender = gender; // must be one of the enum values; omit if none selected
+    if (gender) input.gender = gender;
 
     setSaving(true);
     try {
       const client = generateClient();
-      await client.graphql({
-        query: updateUserProfile,
-        variables: { input },
-        authMode: 'apiKey',
-      });
+      await client.graphql({ query: updateUserProfile, variables: { input }, authMode: 'apiKey' });
       Alert.alert('Saved', 'Your profile has been updated.');
     } catch (e) {
       console.log('Save error', e);
@@ -130,7 +103,12 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xl }, // ⬅️ extra bottom padding
+        ]}
+      >
         <View style={styles.page}>
           <ScreenHeader label="Account" title="Profile" subtitle="Manage your info" />
 
@@ -195,7 +173,6 @@ const ProfileScreen = () => {
                   </Text>
                 );
               })}
-              {/* Clear selection */}
               <Text
                 onPress={() => setGender('')}
                 style={[
@@ -207,13 +184,29 @@ const ProfileScreen = () => {
               </Text>
             </View>
 
+            {/* Extra breathing room + divider before the button */}
             <View style={{ height: spacing.lg }} />
-            <CustomButton text={saving ? 'Saving…' : 'Save changes'} onPress={handleSave} loading={saving} />
-          </View>
 
-          <View style={{ height: spacing.md }} />
-          <CustomButton text="Sign Out" onPress={handleSignOut} type="SECONDARY" />
-          <View style={{ height: spacing.xl }} />
+
+          </View>
+{/* Actions (outside the card) */}
+<View style={styles.actions}>
+  <View style={styles.actionItem}>
+    <CustomButton
+      text={saving ? 'Saving…' : 'Save changes'}
+      onPress={handleSave}
+      loading={saving}
+    />
+  </View>
+  <View>
+    <CustomButton
+      text="Sign Out"
+      onPress={handleSignOut}
+      type="SECONDARY"
+    />
+  </View>
+</View>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -222,37 +215,74 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 16, paddingBottom: spacing.xl },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl + 16,
+  },
   page: { width: '100%', maxWidth: 680, alignSelf: 'center' },
 
   cardRow: {
-    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border,
-    padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
     marginBottom: spacing.lg,
   },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#EFE9F6', alignItems: 'center', justifyContent: 'center' },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EFE9F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatarText: { fontSize: 18, fontWeight: '800', color: colors.primary },
   idTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
   idSubMuted: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
 
   card: {
-    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border,
-    padding: spacing.lg, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 }, elevation: 2,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,            // ⬅️ more inner bottom space
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    marginBottom: spacing.lg,
   },
+
   label: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.xs, fontWeight: '600' },
   input: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: '#FAFAFC',
-    paddingHorizontal: spacing.md, height: 44, fontSize: type.body, color: colors.text,
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    backgroundColor: '#FAFAFC', paddingHorizontal: spacing.md,
+    height: 44, fontSize: type.body, color: colors.text,
   },
   inputMultiline: { minHeight: 88, textAlignVertical: 'top', paddingTop: spacing.sm },
 
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: spacing.xs },
   pill: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12,
-    color: colors.text,
+    borderWidth: 1, borderColor: colors.border, borderRadius: 999,
+    paddingVertical: 6, paddingHorizontal: 12, color: colors.text,
   },
+
+  divider: { height: 1, backgroundColor: colors.border, opacity: 0.9 },
+
+  saveWrap: { marginTop: spacing.lg },     // ⬅️ pushes the button down inside the card
+  signOutWrap: { marginTop: spacing.lg },  // ⬅️ clear space after the card
 });
 
 export default ProfileScreen;

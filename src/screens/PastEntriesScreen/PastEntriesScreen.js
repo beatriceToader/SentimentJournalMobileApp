@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { generateClient } from 'aws-amplify/api';
@@ -6,42 +6,47 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import { colors, spacing, radius, type } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
-import ScreenHeader from '../../components/ScreenHeader';
+import ScreenHeader from '../../components/ScreenHeader';;
+import { useFocusEffect } from '@react-navigation/native';
 
 const PastEntriesScreen = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const fetchEntries = async () => {
-    setLoading(true);
-    const client = generateClient();
-    let username = 'guest';
-    try {
-      const user = await getCurrentUser();
-      username = user?.username ?? 'guest';
-    } catch {}
+const fetchEntries = useCallback(async () => {
+  setLoading(true);
+  const client = generateClient();
+  let username = 'guest';
+  try {
+    const user = await getCurrentUser();
+    username = user?.username ?? 'guest';
+  } catch {}
 
-    try {
-      const result = await client.graphql({
-        query: queries.listJournalEntries,
-        variables: {},
-        authMode: 'apiKey', // keep if your API default is API key
-      });
+  try {
+    const result = await client.graphql({
+      query: queries.listJournalEntries,
+      variables: {},
+      authMode: 'apiKey',
+    });
 
-      const all = result.data.listJournalEntries.items || [];
-      const userItems = all
-        .filter((e) => e.username === username)
-        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const all = result.data.listJournalEntries.items || [];
+    const userItems = all
+      .filter((e) => e.username === username)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-      setEntries(userItems);
-    } catch (e) {
-      console.error('Error fetching journal entries:', e);
-    }
-    setLoading(false);
-  };
+    setEntries(userItems);
+  } catch (e) {
+    console.error('Error fetching journal entries:', e);
+  }
+  setLoading(false);
+}, []);
 
-  useEffect(() => { fetchEntries(); }, []);
+useFocusEffect(
+  useCallback(() => {
+    fetchEntries();
+  }, [fetchEntries])
+);
 
   // Map date (YYYY-MM-DD) -> entries[]
   const entriesByDate = useMemo(() => {
