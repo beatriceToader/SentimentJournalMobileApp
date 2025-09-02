@@ -1,129 +1,160 @@
-import React, {useState} from 'react'
-import {View, Text, StyleSheet, Dimensions, ScrollView, Alert} from 'react-native'
-import CustomInput from '../../components/CustomInput'
-import CustomButton from '../../components/CustomButton'
-import { useNavigation } from '@react-navigation/native'
-import { useForm, Controller } from 'react-hook-form'
+// src/screens/NewPasswordScreen/NewPasswordScreen.js
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+  Text,
+  Pressable,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useForm } from 'react-hook-form';
 import { confirmResetPassword } from 'aws-amplify/auth';
-import { useRoute } from '@react-navigation/native';
+
+import CustomInput from '../../components/CustomInput';
+import CustomButton from '../../components/CustomButton';
+import ScreenHeader from '../../components/ScreenHeader';
+import { colors, spacing, radius, type } from '../../theme';
+
+const APP_NAME = 'Sentiment Journal';
 
 const NewPasswordScreen = () => {
-    const route = useRoute();
-    const username = route?.params?.username;
-    const {control, handleSubmit} = useForm()
-    const [loading, setLoading] = useState(false)
+  const navigation = useNavigation();
+  const route = useRoute();
+  const username = route?.params?.username || '';
 
-    const navigation=useNavigation()
+  const [loading, setLoading] = useState(false);
+  const { control, handleSubmit } = useForm();
 
-    const onSubmitPressed = async(data) => {
-        if(loading){
-            return;
-        }
-
-        setLoading(true)
-
-        try {
-            await confirmResetPassword({
-                username,
-                newPassword: data.password,
-                confirmationCode: data.code,
-            });
-
-            Alert.alert('Success', 'Password reset successful. You can now sign in.');
-            navigation.navigate('SignIn');
-        } catch (e) {
-            console.log('Reset password error:', e);
-
-            let message = 'Something went wrong';
-            if (e.name === 'CodeMismatchException') {
-                message = 'Invalid confirmation code';
-            } else if (e.name === 'ExpiredCodeException') {
-                message = 'Code expired. Please request a new one.';
-            } else if (e.message) {
-                message = e.message;
-            }
-
-            Alert.alert('Ooops', message);
-        }
-        setLoading(false)
+  const onSubmitPressed = async (data) => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await confirmResetPassword({
+        username,
+        newPassword: data.password,
+        confirmationCode: data.code,
+      });
+      Alert.alert('Success', 'Password reset successful. You can now sign in.');
+      navigation.navigate('SignIn');
+    } catch (e) {
+      console.log('Reset password error:', e);
+      let message = 'Something went wrong';
+      if (e.name === 'CodeMismatchException') message = 'Invalid confirmation code';
+      else if (e.name === 'ExpiredCodeException') message = 'Code expired. Please request a new one.';
+      else if (e.message) message = e.message;
+      Alert.alert('Oops', message);
     }
+    setLoading(false);
+  };
 
-    const onSignInPressed = () => {
-        navigation.navigate('SignIn')
-    }
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.page}>
+          <ScreenHeader
+            label={APP_NAME}
+            title="Set a new password"
+            subtitle="Enter the code we sent and your new password"
+          />
 
-    return(
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.root}>
-            <Text style={styles.title}>Reset your password</Text>
-            <CustomInput 
-                name='code'
-                placeholder="Code" 
+          <View style={styles.card}>
+            <View style={styles.inputs}>
+              <CustomInput
+                name="code"
+                placeholder="Confirmation code"
                 control={control}
-                rules={{required:'Code is required'}} 
-                secureTextEntry={false}
-            />
+                rules={{ required: 'Code is required' }}
+                keyboardType="number-pad"
+                autoCapitalize="none"
+              />
 
-            <CustomInput 
-                name='password'
-                placeholder="Enter new password" 
+              <CustomInput
+                name="password"
+                placeholder="New password"
                 control={control}
-                rules= {{
-                    required:'Password is required',
-                    minLength: {
-                        value:8,
-                        message:'Password should have at least 3 characters'
-                    },
+                rules={{
+                  required: 'Password is required',
+                  minLength: { value: 8, message: 'Password must be at least 8 characters' },
                 }}
-                secureTextEntry={true}
-            />
-           
-            <CustomButton 
-                text={loading ? "Loading..." : "Submit"} 
-                onPress={handleSubmit(onSubmitPressed)}
+                secureTextEntry
+              />
+            </View>
+
+            <CustomButton
+              text={loading ? 'Submitting…' : 'Submit'}
+              onPress={handleSubmit(onSubmitPressed)}
+              loading={loading}
             />
 
-            <CustomButton 
-                text="Back to Sign In" 
-                onPress={onSignInPressed}
-                type="TERTIARY"    
-            />
-            
+            <View style={styles.switchRow}>
+              <Text style={styles.switchText}>Back to</Text>
+              <Pressable onPress={() => navigation.navigate('SignIn')} hitSlop={8}>
+                <Text style={styles.switchLink}>Sign in</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.helper}>
+              Tip: use at least 8 characters with a mix of letters and numbers.
+            </Text>
+          </View>
         </View>
-        </ScrollView>
-    )
-}
-
-const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,          // face ca ScrollView să se extindă complet
-        justifyContent: 'center',  // sau 'flex-start'
-        paddingVertical: 40,  // spațiu sus/jos
-        //paddingHorizontal: 20,
-        minWidth: Dimensions.get('window').width,
-        minHeight: Dimensions.get('window').height,
-        backgroundColor: '#fbdbab'
-    },
-    root:{
-        //flex: 1, // Ocupă tot ecranul
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-start', // aliniezi sus
-        paddingTop: 100, // distanță față de topul ecranului
-        paddingHorizontal: 20,
-        //alignSelf: 'stretch', 
-        //backgroundColor: 'white'
-    },
-    title:{
-        fontSize: 24,
-        fontWeight: 'bold',
-        color:'#58185e', 
-        margin: 10
-    },
-})
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl * 2,
+    paddingBottom: spacing.xl,
+  },
+  page: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    marginTop: spacing.lg,
+  },
+  inputs: {
+    width: '100%',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  switchRow: {
+    marginTop: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  switchText: { color: colors.textMuted, fontSize: type.body },
+  switchLink: { color: colors.primary, fontWeight: '700', fontSize: type.body },
+  helper: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+});
 
-export default NewPasswordScreen
+export default NewPasswordScreen;

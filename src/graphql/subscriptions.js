@@ -85,3 +85,57 @@ export const onDeleteJournalEntry = /* GraphQL */ `
     }
   }
 `;
+export const onCreateUserProfile = /* GraphQL */ `
+  subscription OnCreateUserProfile(
+    $filter: ModelSubscriptionUserProfileFilterInput
+  ) {
+    onCreateUserProfile(filter: $filter) {
+      id
+      username
+      displayName
+      email
+      bio
+      age
+      gender
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateUserProfile = /* GraphQL */ `
+  subscription OnUpdateUserProfile(
+    $filter: ModelSubscriptionUserProfileFilterInput
+  ) {
+    onUpdateUserProfile(filter: $filter) {
+      id
+      username
+      displayName
+      email
+      bio
+      age
+      gender
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteUserProfile = /* GraphQL */ `
+  subscription OnDeleteUserProfile(
+    $filter: ModelSubscriptionUserProfileFilterInput
+  ) {
+    onDeleteUserProfile(filter: $filter) {
+      id
+      username
+      displayName
+      email
+      bio
+      age
+      gender
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;

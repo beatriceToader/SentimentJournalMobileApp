@@ -1,44 +1,76 @@
-import React from 'react'
-import {View, Text, StyleSheet, Pressable} from 'react-native'
+import React from 'react';
+import { Text, StyleSheet, Pressable } from 'react-native';
+import { colors, spacing, radius, type } from '../../theme'; // if you already have theme.js
 
-const CustomButton = ({onPress, text, type='PRIMARY'}) => {
-    return(
-        <Pressable onPress={onPress} style={[styles.container, styles[`container_${type}`]]}>
-            <Text style={[styles.text, styles[`text_${type}`]]}>{text}</Text>
-        </Pressable>
-    )
-}
+const CustomButton = ({ onPress, text, type = 'PRIMARY', disabled = false }) => {
+  const isPrimary = type === 'PRIMARY';
 
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.base,
+        styles[`container_${type}`],
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+      ]}
+    >
+      <Text style={[styles.text, styles[`text_${type}`]]}>{text}</Text>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        width: '80%',
-        padding: 15,
-        marginVertical: 5,
-        alignItems: 'center',
-        borderRadius: 5
-    },
-    container_PRIMARY: {
-        backgroundColor: '#fb747c',
-    },
-    container_SECONDARY:{
-        borderColor: '#fb747c',
-        borderWidth: 2
-    },
-    container_TERTIARY: {
-        
-    },
-    text: {
-        fontWeight: 'bold',
-        color: '#58185e'
-    },
-    text_SECONDARY: {
-        color: '#fb747c'
-    },
-    text_TERTIARY: {
-        fontStyle: 'italic',
-        color: '#58185e'
-    },
-})
+  base: {
+    width: '100%',
+    paddingVertical: spacing.md,
+    borderRadius: 26, // pill shape
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: spacing.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
 
-export default CustomButton
+  // prettier pink that matches your background (#fbdbab and theme)
+  container_PRIMARY: {
+    backgroundColor: '#58185e', // softer professional pink
+  },
+  container_SECONDARY: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#58185e',
+  },
+  container_TERTIARY: {
+    backgroundColor: 'transparent',
+  },
+
+  text: {
+    fontSize: type.button,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  text_PRIMARY: {
+    color: '#fff',
+  },
+  text_SECONDARY: {
+    color: '#58185e',
+  },
+  text_TERTIARY: {
+    color: colors.textMuted,
+  },
+
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+});
+
+export default CustomButton;
